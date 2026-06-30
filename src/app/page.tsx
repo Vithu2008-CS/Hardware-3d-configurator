@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import AsgardeoAuthProvider from "@/components/AuthProvider";
 
 const Header = dynamic(() => import("@/components/Header"), { ssr: false });
 const ConfigPanel = dynamic(() => import("@/components/ConfigPanel"), { ssr: false });
@@ -30,24 +31,26 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-zinc-950 text-zinc-100 overflow-hidden">
-      {/* ================= SECURE OIDC HEADER ================= */}
-      <Header />
+    <AsgardeoAuthProvider>
+      <div className="flex flex-col min-h-screen bg-zinc-950 text-zinc-100 overflow-hidden">
+        {/* ================= SECURE OIDC HEADER ================= */}
+        <Header />
 
-      {/* ================= MAIN INTERACTIVE WORKSPACE ================= */}
-      <main className="flex-grow flex flex-col lg:flex-row relative h-[calc(100vh-4rem)]">
-        
-        {/* Left/Top Section: 3D Real-time Viewport */}
-        <div className="flex-grow h-[50vh] lg:h-full relative border-b lg:border-b-0 lg:border-r border-zinc-900 bg-zinc-950">
-          <ConfiguratorCanvas />
-        </div>
+        {/* ================= MAIN INTERACTIVE WORKSPACE ================= */}
+        <main className="flex-grow flex flex-col lg:flex-row relative h-[calc(100vh-4rem)]">
+          
+          {/* Left/Top Section: 3D Real-time Viewport */}
+          <div className="flex-grow h-[50vh] lg:h-full relative border-b lg:border-b-0 lg:border-r border-zinc-900 bg-zinc-950">
+            <ConfiguratorCanvas />
+          </div>
 
-        {/* Right/Bottom Section: Glassmorphic Control Panel */}
-        <div className="w-full lg:w-[420px] xl:w-[450px] flex-shrink-0 h-[50vh] lg:h-full p-4 lg:p-6 bg-zinc-950/40">
-          <ConfigPanel />
-        </div>
+          {/* Right/Bottom Section: Glassmorphic Control Panel */}
+          <div className="w-full lg:w-[420px] xl:w-[450px] flex-shrink-0 h-[50vh] lg:h-full p-4 lg:p-6 bg-zinc-950/40">
+            <ConfigPanel />
+          </div>
 
-      </main>
-    </div>
+        </main>
+      </div>
+    </AsgardeoAuthProvider>
   );
 }
