@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useConfigStore } from "@/store/configStore";
@@ -24,11 +24,32 @@ export default function ChassisModel() {
   const gpuFan1Ref = useRef<THREE.Mesh>(null);
   const gpuFan2Ref = useRef<THREE.Mesh>(null);
   
-  // Material refs for dynamic OIDC / RGB LED mode syncing
+  // Light ref for dynamic OIDC / RGB LED mode syncing
   const ledLightRef = useRef<THREE.PointLight>(null);
-  const ramLedMaterialRef = useRef<THREE.MeshBasicMaterial>(null);
-  const fanLedMaterialRef = useRef<THREE.MeshBasicMaterial>(null);
-  const logoLedMaterialRef = useRef<THREE.MeshBasicMaterial>(null);
+
+  // Create shared materials that can be updated in-place during the animation loop
+  const sharedMaterialsRef = useRef<{
+    ramLed: THREE.MeshBasicMaterial;
+    fanLed: THREE.MeshBasicMaterial;
+    logoLed: THREE.MeshBasicMaterial;
+  } | null>(null);
+
+  if (!sharedMaterialsRef.current) {
+    sharedMaterialsRef.current = {
+      ramLed: new THREE.MeshBasicMaterial({ color: new THREE.Color(ledColor) }),
+      fanLed: new THREE.MeshBasicMaterial({ color: new THREE.Color(ledColor) }),
+      logoLed: new THREE.MeshBasicMaterial({ color: new THREE.Color(ledColor) }),
+    };
+  }
+  const sharedMaterials = sharedMaterialsRef.current;
+
+  // Sync state changes back to the materials (when ledColor changes outside animation loop)
+  useEffect(() => {
+    const col = new THREE.Color(ledColor);
+    sharedMaterials.ramLed.color.copy(col);
+    sharedMaterials.fanLed.color.copy(col);
+    sharedMaterials.logoLed.color.copy(col);
+  }, [ledColor, sharedMaterials]);
 
   // Inside materials based on insideStyle
   const getInsideMaterialProps = () => {
@@ -93,17 +114,11 @@ export default function ChassisModel() {
       ledLightRef.current.intensity = intensity;
     }
 
-    // Apply color updates to glowing materials
+    // Apply color updates to shared materials
     const emissiveRGB = currentRGB.clone().multiplyScalar(intensity * 0.8);
-    if (ramLedMaterialRef.current) {
-      ramLedMaterialRef.current.color.copy(emissiveRGB);
-    }
-    if (fanLedMaterialRef.current) {
-      fanLedMaterialRef.current.color.copy(emissiveRGB);
-    }
-    if (logoLedMaterialRef.current) {
-      logoLedMaterialRef.current.color.copy(emissiveRGB);
-    }
+    sharedMaterials.ramLed.color.copy(emissiveRGB);
+    sharedMaterials.fanLed.color.copy(emissiveRGB);
+    sharedMaterials.logoLed.color.copy(emissiveRGB);
   });
 
   return (
@@ -215,9 +230,8 @@ export default function ChassisModel() {
                       <meshStandardMaterial color="#1e293b" metalness={0.7} roughness={0.2} />
                     </mesh>
                     {/* Glowing LED Strip on RAM */}
-                    <mesh position={[0, 0, 0.08]}>
+                    <mesh position={[0, 0, 0.08]} material={sharedMaterials.ramLed}>
                       <boxGeometry args={[0.022, 0.8, 0.02]} />
-                      <meshBasicMaterial ref={ramLedMaterialRef} color={ledColor} />
                     </mesh>
                   </group>
                 )}
@@ -243,9 +257,8 @@ export default function ChassisModel() {
         </mesh>
 
         {/* Premium RGB Logo on side of GPU */}
-        <mesh position={[0, 0, 0.51]}>
+        <mesh position={[0, 0, 0.51]} material={sharedMaterials.logoLed}>
           <boxGeometry args={[0.6, 0.2, 0.02]} />
-          <meshBasicMaterial ref={logoLedMaterialRef} color={ledColor} />
         </mesh>
 
         {/* GPU Dual Fans */}
@@ -284,9 +297,8 @@ export default function ChassisModel() {
               <meshStandardMaterial color="#111111" metalness={0.8} roughness={0.2} />
             </mesh>
             {/* Block glowing ring */}
-            <mesh position={[0, 0, 0.08]} rotation={[Math.PI / 2, 0, 0]}>
+            <mesh position={[0, 0, 0.08]} rotation={[Math.PI / 2, 0, 0]} material={sharedMaterials.logoLed}>
               <cylinderGeometry args={[0.24, 0.24, 0.03, 32]} />
-              <meshBasicMaterial ref={logoLedMaterialRef} color={ledColor} />
             </mesh>
           </group>
 
@@ -404,9 +416,8 @@ export default function ChassisModel() {
             <meshStandardMaterial color="#111111" roughness={0.7} />
           </mesh>
           {/* Glowing fan frame ring (Reacts to OIDC LED Sync) */}
-          <mesh position={[0, 0, 0.08]} rotation={[Math.PI / 2, 0, 0]}>
+          <mesh position={[0, 0, 0.08]} rotation={[Math.PI / 2, 0, 0]} material={sharedMaterials.fanLed}>
             <cylinderGeometry args={[0.5, 0.5, 0.02, 32]} />
-            <meshBasicMaterial ref={fanLedMaterialRef} color={ledColor} />
           </mesh>
           {/* Blades */}
           <group ref={fanUpperRef}>
@@ -426,9 +437,8 @@ export default function ChassisModel() {
             <meshStandardMaterial color="#111111" roughness={0.7} />
           </mesh>
           {/* Glowing fan frame ring */}
-          <mesh position={[0, 0, 0.08]} rotation={[Math.PI / 2, 0, 0]}>
+          <mesh position={[0, 0, 0.08]} rotation={[Math.PI / 2, 0, 0]} material={sharedMaterials.fanLed}>
             <cylinderGeometry args={[0.5, 0.5, 0.02, 32]} />
-            <meshBasicMaterial ref={fanLedMaterialRef} color={ledColor} />
           </mesh>
           {/* Blades */}
           <group ref={fanLowerRef}>
