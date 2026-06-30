@@ -19,7 +19,9 @@ export default function AsgardeoAuthProvider({ children }: AuthProviderProps) {
     signInRedirectURL: redirectURL,
     signOutRedirectURL: redirectURL,
     clientID: clientID,
-    baseUrl: `https://api.asgardeo.io/t/${orgName}`,
+    baseUrl: orgName.startsWith("http://") || orgName.startsWith("https://")
+      ? orgName
+      : `https://api.asgardeo.io/t/${orgName}`,
     scope: ["openid", "profile", "email"]
   };
 
